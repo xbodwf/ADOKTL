@@ -222,6 +222,8 @@ class DesktopOpenGLBackend : RenderBackendApi {
 
     fun shouldClose(): Boolean = glfwWindowShouldClose(window)
 
+    fun getWindowHandle(): Long = window
+
     fun pollEvents() = glfwPollEvents()
 
     private fun createShaderProgram(): Int {

@@ -14,6 +14,10 @@ enum class PlayerState {
     IDLE, PLAYING, PAUSED, STOPPED, FINISHED
 }
 
+enum class JudgmentType {
+    NONE, PERFECT, GOOD, MISS
+}
+
 data class PlayerFrameData(
     val state: PlayerState,
     val currentTime: Double,
@@ -24,7 +28,10 @@ data class PlayerFrameData(
     val cameraZoom: Double,
     val totalTiles: Int,
     val completedTiles: Int,
-    val score: Int = 0
+    val score: Int = 0,
+    val judgment: JudgmentType = JudgmentType.NONE,
+    val combo: Int = 0,
+    val maxCombo: Int = 0
 )
 
 class PlayerEngine(
@@ -54,9 +61,19 @@ class PlayerEngine(
         cameraRotation = 0.0,
         cameraZoom = 100.0,
         totalTiles = levelData.angleData.size,
-        completedTiles = 0
+        completedTiles = 0,
+        score = 0,
+        judgment = JudgmentType.NONE,
+        combo = 0,
+        maxCombo = 0
     ))
     val frameState: StateFlow<PlayerFrameData> = _frameState.asStateFlow()
+
+    companion object {
+        private const val PERFECT_MS = 45.0
+        private const val GOOD_MS = 95.0
+        private const val MISS_MS = 150.0
+    }
 
     @kotlin.concurrent.Volatile
     private var isPaused = false
@@ -66,7 +83,52 @@ class PlayerEngine(
     private var score = 0
     private var perfectTiles = 0
 
+    private var nextTargetTile = 1
+    private var combo = 0
+    private var maxCombo = 0
+    private var totalPresses = 0
+    private var successfulPresses = 0
+    private var lastJudgment: JudgmentType = JudgmentType.NONE
+    private var judgmentDisplayTimer = 0.0
+
     private val onTileReachedCallbacks = mutableListOf<(Int) -> Unit>()
+
+    fun onPress() {
+        if (_frameState.value.state != PlayerState.PLAYING) return
+        if (nextTargetTile >= tileEngine.tileCount) return
+
+        val targetTime = tileEngine.tileStartTimes.getOrNull(nextTargetTile) ?: return
+        val diffMs = (elapsedTime - targetTime) * 1000.0
+        val absDiff = kotlin.math.abs(diffMs)
+
+        when {
+            absDiff <= PERFECT_MS -> {
+                score += 150
+                combo++
+                maxCombo = kotlin.math.max(maxCombo, combo)
+                successfulPresses++
+                nextTargetTile++
+                lastJudgment = JudgmentType.PERFECT
+                judgmentDisplayTimer = 0.5
+            }
+            absDiff <= GOOD_MS -> {
+                score += 100
+                combo++
+                maxCombo = kotlin.math.max(maxCombo, combo)
+                successfulPresses++
+                nextTargetTile++
+                lastJudgment = JudgmentType.GOOD
+                judgmentDisplayTimer = 0.5
+            }
+            absDiff <= MISS_MS -> {
+                combo = 0
+                nextTargetTile++
+                lastJudgment = JudgmentType.MISS
+                judgmentDisplayTimer = 0.5
+            }
+        }
+        totalPresses++
+    }
 
     fun init() {
         pipeline = EventPipeline.fromLevel(levelData)
@@ -89,6 +151,13 @@ class PlayerEngine(
         isPaused = false
         score = 0
         perfectTiles = 0
+        nextTargetTile = 1
+        combo = 0
+        maxCombo = 0
+        totalPresses = 0
+        successfulPresses = 0
+        lastJudgment = JudgmentType.NONE
+        judgmentDisplayTimer = 0.0
 
         cameraEngine.resetState()
         cameraEngine.buildTimeline(pipeline.cameraEvents, tileEngine.tileStartTimes)
@@ -138,26 +207,50 @@ class PlayerEngine(
         val interp = cameraEngine.getInterpolated(elapsedTime)
         val targetPos = cameraEngine.calculateTargetPosition(planetPos, interp)
 
+        // Auto-miss: player didn't press in time for next target
+        if (nextTargetTile < tileEngine.tileCount) {
+            val targetTime = tileEngine.tileStartTimes.getOrNull(nextTargetTile) ?: 0.0
+            val diffMs = (elapsedTime - targetTime) * 1000.0
+            if (diffMs > MISS_MS) {
+                combo = 0
+                lastJudgment = JudgmentType.MISS
+                judgmentDisplayTimer = 0.5
+                nextTargetTile++
+            }
+        }
+
+        // Fade out judgment display
+        if (judgmentDisplayTimer > 0.0) {
+            judgmentDisplayTimer -= deltaTime
+            if (judgmentDisplayTimer <= 0.0) {
+                lastJudgment = JudgmentType.NONE
+            }
+        }
+
         val currentTile = tileEngine.getCurrentTileIndex(elapsedTime)
         if (currentTile != prevTile) {
             onTileReachedCallbacks.forEach { it(currentTile) }
-            score += 100
-            perfectTiles++
         }
 
         beatCount += deltaTime * (levelData.settings.bpm / 60.0)
 
+        val finished = currentTile >= tileEngine.tileCount - 1
+        val finalState = if (finished) PlayerState.FINISHED else PlayerState.PLAYING
+
         _frameState.update {
             it.copy(
-                state = if (currentTile >= tileEngine.tileCount - 1) PlayerState.FINISHED else PlayerState.PLAYING,
+                state = finalState,
                 currentTime = elapsedTime,
                 currentTileIndex = currentTile,
                 planetPosition = planetPos,
                 cameraPosition = targetPos,
                 cameraRotation = interp.rotation,
                 cameraZoom = interp.zoom,
-                completedTiles = currentTile,
-                score = score
+                completedTiles = nextTargetTile - 1,
+                score = score,
+                judgment = lastJudgment,
+                combo = combo,
+                maxCombo = maxCombo
             )
         }
     }
@@ -208,7 +301,14 @@ class PlayerEngine(
         elapsedTime = 0.0
         score = 0
         perfectTiles = 0
-        _frameState.update { it.copy(state = PlayerState.STOPPED, score = 0) }
+        nextTargetTile = 1
+        combo = 0
+        maxCombo = 0
+        totalPresses = 0
+        successfulPresses = 0
+        lastJudgment = JudgmentType.NONE
+        judgmentDisplayTimer = 0.0
+        _frameState.update { it.copy(state = PlayerState.STOPPED, score = 0, judgment = JudgmentType.NONE, combo = 0) }
     }
 
     fun seek(time: Double) {
