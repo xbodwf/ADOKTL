@@ -6,6 +6,7 @@ import com.adoktl.math.Vector2
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL33.*
+import org.lwjgl.BufferUtils
 import org.lwjgl.system.MemoryUtil
 
 class DesktopOpenGLBackend : RenderBackendApi {
@@ -187,7 +188,7 @@ class DesktopOpenGLBackend : RenderBackendApi {
     override fun createTexture(width: Int, height: Int, data: ByteArray): Int {
         val texId = glGenTextures()
         glBindTexture(GL_TEXTURE_2D, texId)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, MemoryUtil.memByteBuffer(data))
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, BufferUtils.createByteBuffer(data.size).put(data).flip())
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         return texId
@@ -195,7 +196,7 @@ class DesktopOpenGLBackend : RenderBackendApi {
 
     override fun updateTexture(id: Int, width: Int, height: Int, data: ByteArray) {
         glBindTexture(GL_TEXTURE_2D, id)
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, MemoryUtil.memByteBuffer(data))
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, BufferUtils.createByteBuffer(data.size).put(data).flip())
     }
 
     override fun deleteTexture(id: Int) {

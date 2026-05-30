@@ -1,9 +1,11 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.library)
 }
 
 kotlin {
     jvm()
+    androidTarget()
     linuxX64()
     mingwX64()
 
@@ -14,6 +16,7 @@ kotlin {
                 implementation(libs.kotlin.coroutines.core)
             }
         }
+        val androidMain by getting
         val jvmMain by getting {
             dependencies {
                 implementation(libs.lwjgl.core)
@@ -35,6 +38,14 @@ kotlin {
                 implementation(libs.lwjgl.opengl)
             }
         }
+    }
+}
+
+android {
+    namespace = "com.adoktl.render"
+    compileSdk = 35
+    defaultConfig {
+        minSdk = 26
     }
 }
 

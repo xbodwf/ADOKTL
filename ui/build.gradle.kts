@@ -2,10 +2,12 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.android.library)
 }
 
 kotlin {
     jvm()
+    androidTarget()
 
     sourceSets {
         val commonMain by getting {
@@ -19,7 +21,16 @@ kotlin {
                 implementation(libs.compose.foundation)
             }
         }
+        val androidMain by getting
         val jvmMain by getting
+    }
+}
+
+android {
+    namespace = "com.adoktl.ui"
+    compileSdk = 35
+    defaultConfig {
+        minSdk = 26
     }
 }
 
