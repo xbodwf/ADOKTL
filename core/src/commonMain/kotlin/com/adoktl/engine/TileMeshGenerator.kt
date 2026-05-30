@@ -256,6 +256,9 @@ class TileMeshGenerator {
         private fun d2r(deg: Double): Double = deg * PI / 180.0
         private fun fmod(a: Double, b: Double): Double = a - b * floor(a / b)
 
-        private infix fun Double.pow(exp: Double): Double = kotlin.math.pow(this, exp)
+        private infix fun Double.pow(exp: Double): Double = when {
+            exp == 2.0 -> this * this
+            else -> kotlin.math.exp(exp * kotlin.math.ln(this))
+        }
     }
 }

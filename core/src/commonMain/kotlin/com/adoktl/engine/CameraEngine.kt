@@ -117,15 +117,17 @@ class CameraEngine(
         var rotation = state.rotation
 
         fun apply(tr: PropertyTransition<Double>, set: (Double) -> Unit) {
-            if (!tr.active || tr.startValue == null || tr.endValue == null) return
+            if (!tr.active) return
+            val sv = tr.startValue ?: return
+            val ev = tr.endValue ?: return
             val p = ((t - tr.startTime) / tr.duration).coerceIn(0.0, 1.0)
             if (p >= 1.0) {
                 tr.active = false
-                set(tr.endValue)
+                set(ev)
                 return
             }
             val ease = EasingFunctions.get(tr.ease)
-            set(tr.startValue + (tr.endValue - tr.startValue) * ease(p))
+            set(sv + (ev - sv) * ease(p))
         }
 
         apply(posXTween) { x = it }

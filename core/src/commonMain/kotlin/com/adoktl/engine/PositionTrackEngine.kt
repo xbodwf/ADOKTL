@@ -76,7 +76,7 @@ class PositionTrackEngine(private val levelData: LevelData) {
             basePositions[i] = positions[i]
         }
 
-        val vector = Vector2.ZERO
+        var vector = Vector2.ZERO
 
         for (floor in 0 until n) {
             val floorEvents = events[floor] ?: continue
@@ -116,8 +116,7 @@ class PositionTrackEngine(private val levelData: LevelData) {
                             positions[j] = Vector2(positions[j].x + changeX, positions[j].y + changeY)
                         }
                         val basePos = basePositions[floor] ?: Vector2.ZERO
-                        vector.x = positions[floor].x - basePos.x
-                        vector.y = positions[floor].y - basePos.y
+                        vector = Vector2(positions[floor].x - basePos.x, positions[floor].y - basePos.y)
                     }
                 }
 

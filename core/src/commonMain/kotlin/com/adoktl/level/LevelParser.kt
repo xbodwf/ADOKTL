@@ -1,7 +1,7 @@
 package com.adoktl.level
 
 import com.adoktl.math.Vector2
-import com.fizzd.jsonparser.StringParser
+import com.adoktl.core.json.StringParser
 
 object LevelParser {
 
