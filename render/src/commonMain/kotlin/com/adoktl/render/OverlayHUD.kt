@@ -1,6 +1,7 @@
 package com.adoktl.render
 
 import com.adoktl.math.AdoktlColor
+import kotlin.math.pow
 
 /**
  * 2D overlay HUD for debugging/stats display.
@@ -33,7 +34,7 @@ class OverlayHUD {
         if (!_visible) return
 
         val textLines = buildTextLines()
-        val fpsLine = "FPS  ${"%.2f".format(fps)}"
+        val fpsLine = "FPS  ${fmt(fps, 2)}"
 
         val allLines = listOf(fpsLine) + textLines
         val lineHeight = 18f
@@ -74,10 +75,10 @@ class OverlayHUD {
         val pct = if (totalTiles > 0) (safeTile.toDouble() / totalTiles) * 100.0 else 0.0
 
         return listOf(
-            "TBPM | ${"%.2f".format(tbpm)}",
-            "CBPM | ${"%.2f".format(cbpm)}",
+            "TBPM | ${fmt(tbpm, 2)}",
+            "CBPM | ${fmt(cbpm, 2)}",
             "Map Time | ${formatTime(currentTime)}",
-            "Tiles | $safeTile / $totalTiles (${"%.1f".format(pct)}%)"
+            "Tiles | $safeTile / $totalTiles (${fmt(pct, 1)}%)"
         )
     }
 
@@ -103,6 +104,13 @@ class OverlayHUD {
         val s = sFloat.toInt()
         val d = ((sFloat - s) * 10).toInt()
         return "$m:${s.toString().padStart(2, '0')}.$d"
+    }
+
+    private fun fmt(value: Double, decimals: Int): String {
+        val factor = 10.0.pow(decimals)
+        val whole = value.toInt()
+        val frac = ((value - whole) * factor).toInt()
+        return "$whole.${frac.toString().padStart(decimals, '0')}"
     }
 }
 
