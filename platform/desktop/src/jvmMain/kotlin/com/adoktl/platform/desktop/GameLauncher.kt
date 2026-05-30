@@ -35,7 +35,7 @@ object GameLauncher {
 
             playerEngine.start()
 
-            val camera = CameraData(
+            var camera = CameraData(
                 position = Vector2.ZERO,
                 zoom = 100.0,
                 rotation = 0.0
@@ -46,9 +46,11 @@ object GameLauncher {
                 renderer.beginFrame()
 
                 val frameData = playerEngine.frameState.value
-                camera.position = frameData.cameraPosition
-                camera.zoom = frameData.cameraZoom
-                camera.rotation = frameData.cameraRotation
+                camera = camera.copy(
+                    position = frameData.cameraPosition,
+                    zoom = frameData.cameraZoom,
+                    rotation = frameData.cameraRotation
+                )
 
                 renderer.clear(config.clearColor)
                 renderer.setCamera(camera.position, camera.zoom, camera.rotation)
@@ -65,7 +67,7 @@ object GameLauncher {
                         color = AdoktlColor(0.87f, 0.73f, 0.48f),
                         bgColor = AdoktlColor(0.06f, 0.07f, 0.13f)
                     )
-                    if (!mesh.isEmpty()) {
+                    if (mesh.vertices.isNotEmpty()) {
                         val renderMesh = com.adoktl.render.Mesh(
                             vertices = mesh.vertices,
                             indices = mesh.indices,

@@ -71,9 +71,9 @@ fun DesktopFilePickerButton(onResult: (FilePickResult) -> Unit) {
                     val json = file.readText()
                     val title = file.name
                     onResult(FilePickResult(json, title))
-                    DebugLog.i("Loaded level: ${file.absolutePath}")
+                    DebugLog.log("Loaded level: ${file.absolutePath}")
                 } catch (e: Exception) {
-                    DebugLog.e("Failed to load level: ${e.message}")
+                    DebugLog.log("Failed to load level: ${e.message}")
                 }
             }
         },
@@ -122,10 +122,10 @@ fun DesktopGameWindow(
 fun launchLwjglGame(levelJson: String) {
     Thread {
         try {
-            DebugLog.i("Starting LWJGL game window...")
+            DebugLog.log("Starting LWJGL game window...")
             GameLauncher.start(levelJson)
         } catch (e: Exception) {
-            DebugLog.e("LWJGL game error: ${e.message}")
+            DebugLog.log("LWJGL game error: ${e.message}")
         }
     }.apply {
         isDaemon = true

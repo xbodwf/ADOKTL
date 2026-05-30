@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
             try {
                 contentResolver.openInputStream(uri)?.use { it.reader().readText() }
             } catch (e: Exception) {
-                DebugLog.e("Failed to read intent file: ${e.message}")
+                DebugLog.log("Failed to read intent file: ${e.message}")
                 null
             }
         }
@@ -74,7 +74,7 @@ fun AndroidFilePickerButton(onResult: (FilePickResult) -> Unit) {
 
                 onResult(FilePickResult(json, displayName))
             } catch (e: Exception) {
-                DebugLog.e("File picker error: ${e.message}")
+                DebugLog.log("File picker error: ${e.message}")
             }
         }
     }

@@ -15,7 +15,6 @@ kotlin {
             dependencies {
                 implementation(project(":core"))
                 implementation(project(":render"))
-                implementation(project(":ui"))
                 implementation(libs.kotlin.coroutines.core)
             }
         }
