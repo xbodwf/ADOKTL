@@ -257,7 +257,7 @@ class HitsoundManager(
                 val t = i.toDouble() / sampleRate
                 val env = kotlin.math.exp(-decay * t)
                 val tone = kotlin.math.sin(2.0 * kotlin.math.PI * freq * t) * (1.0 - noiseAmount)
-                val noise = (Math.random() * 2.0 - 1.0) * noiseAmount
+                val noise = (kotlin.random.Random.nextDouble() * 2.0 - 1.0) * noiseAmount
                 val sample = (tone + noise) * env
 
                 for (ch in 0 until numChannels) {

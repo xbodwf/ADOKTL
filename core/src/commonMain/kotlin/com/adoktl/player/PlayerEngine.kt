@@ -58,7 +58,7 @@ class PlayerEngine(
     ))
     val frameState: StateFlow<PlayerFrameData> = _frameState.asStateFlow()
 
-    @Volatile
+    @kotlin.concurrent.Volatile
     private var isPaused = false
     private var timerCoroutine: Job? = null
     private var elapsedTime = 0.0
