@@ -10,13 +10,7 @@ plugins {
 }
 
 kotlin {
-    androidTarget {
-        compilations.all {
-            compilerOptions {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-            }
-        }
-    }
+    androidTarget()
 
     sourceSets {
         val androidMain by getting {
@@ -52,6 +46,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     buildFeatures {
         compose = true
     }
@@ -63,15 +61,14 @@ android {
     }
 }
 
-val appVersionName: String by android.defaultConfig
-val appVersionCode: Int by android.defaultConfig
-
 tasks.register<Copy>("packageReleaseXapk") {
     group = "build"
     description = "Packages release APK as xapk (sideload format)"
 
     dependsOn("assembleRelease")
 
+    val appVersionName = "1.0.0"
+    val appVersionCode = 1
     val buildDir = layout.buildDirectory.get().asFile
     val apkFile = file("${buildDir}/outputs/apk/release/release/${project.name}-release.apk")
     val outDir = file("${buildDir}/outputs/xapk")
@@ -125,6 +122,8 @@ tasks.register<Zip>("packageDebugApks") {
     description = "Packages all debug APKs into apks archive (multi-ABI)"
 
     dependsOn("assembleDebug")
+
+    val appVersionName = "1.0.0"
 
     archiveFileName.set("${project.name}-${appVersionName}-debug.apks")
     destinationDirectory.set(layout.buildDirectory.dir("outputs/apks"))
