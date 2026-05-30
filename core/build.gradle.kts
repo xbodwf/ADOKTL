@@ -11,7 +11,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("com.fizzd:ADOFAIJSONParser:1.0-SNAPSHOT")
                 implementation(libs.kotlin.coroutines.core)
             }
         }
