@@ -21,6 +21,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusable
 import com.adoktl.engine.TileMeshGenerator
 import com.adoktl.player.JudgmentType
 import com.adoktl.player.PlayerEngine
@@ -44,7 +47,7 @@ fun ComposeGameView(
 ) {
     val frameData by playerEngine.frameState.collectAsState()
 
-    val focusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val focusRequester = remember { FocusRequester() }
 
     Box(
         modifier = modifier
