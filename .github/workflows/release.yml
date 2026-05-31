@@ -41,17 +41,13 @@ jobs:
       - name: Build Android Release AAB
         run: ./gradlew :platform:android:app:bundleRelease --stacktrace
 
-      - name: Build XAPK (sideload)
-        run: ./gradlew :platform:android:app:packageReleaseXapk --stacktrace
-
-      - name: Upload Android artifacts
+      - name: Upload Android artifacts (APK + AAB)
         uses: actions/upload-artifact@v4
         with:
           name: adoktl-${{ github.ref_name }}-android
           path: |
             platform/android/app/build/outputs/apk/release/**/*.apk
             platform/android/app/build/outputs/bundle/release/**/*.aab
-            platform/android/app/build/outputs/xapk/*.xapk
 
   linux:
     name: Build Linux .deb
@@ -116,9 +112,42 @@ jobs:
           name: adoktl-${{ github.ref_name }}-windows
           path: platform/desktop/build/compose/binaries/main/msi/*.msi
 
+  desktop-jvm:
+    name: Build Desktop JVM distributable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-release-jvm-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-release-jvm-
+            ${{ runner.os }}-gradle-
+
+      - name: Build desktop JVM distributable
+        run: chmod +x gradlew && ./gradlew :platform:desktop:createDistributable --stacktrace
+
+      - name: Package JVM distributable as tar.gz
+        run: tar -czf adoktl-${{ github.ref_name }}-desktop-jvm.tar.gz -C platform/desktop/build/compose/binaries/main/distributable/ .
+
+      - name: Upload JVM distributable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adoktl-${{ github.ref_name }}-desktop-jvm
+          path: adoktl-${{ github.ref_name }}-desktop-jvm.tar.gz
+
   release:
     name: Create GitHub Release
-    needs: [android, linux, windows]
+    needs: [android, linux, windows, desktop-jvm]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -151,11 +180,11 @@ jobs:
             ## ADOKTL ${{ github.ref_name }}
 
             ### Downloads
-            - **Android APK**: `adoktl-android-v*.apk`
-            - **Android AAB** (Play Store): `adoktl-android-v*.aab`
-            - **Android XAPK** (sideloading): `adoktl-android-v*.xapk`
-            - **Windows**: `adoktl-windows-v*.msi`
-            - **Linux**: `adoktl-linux-v*.deb`
+            - **Android APK**: `adoktl-*-android-*.apk`
+            - **Android AAB** (Play Store): `adoktl-*-android-*.aab`
+            - **Windows**: `adoktl-*-windows-*.msi`
+            - **Linux**: `adoktl-*-linux-*.deb`
+            - **Desktop JVM** (cross-platform, requires Java 17): `adoktl-*-desktop-jvm.tar.gz`
           generate_release_notes: true
           draft: false
           prerelease: ${{ steps.prerelease.outputs.detected }}
