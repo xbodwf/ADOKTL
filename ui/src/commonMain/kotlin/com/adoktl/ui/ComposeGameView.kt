@@ -15,15 +15,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusable
+
 import com.adoktl.engine.TileMeshGenerator
 import com.adoktl.player.JudgmentType
 import com.adoktl.player.PlayerEngine
@@ -47,22 +44,10 @@ fun ComposeGameView(
 ) {
     val frameData by playerEngine.frameState.collectAsState()
 
-    val focusRequester = remember { FocusRequester() }
-
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0f0f1a))
-            .focusRequester(focusRequester)
-            .focusable()
-            .onKeyEvent { event ->
-                if (event.key == Key.Spacebar || event.key == Key.Enter) {
-                    if (event.type == KeyEventType.KeyUp) {
-                        playerEngine.onPress()
-                    }
-                    true
-                } else false
-            }
             .pointerInput(Unit) {
                 detectTapGestures {
                     if (frameData.state == PlayerState.PLAYING || frameData.state == PlayerState.IDLE) {
@@ -132,9 +117,6 @@ fun ComposeGameView(
         }
     }
 
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-    }
 }
 
 private fun buildHudText(frameData: com.adoktl.player.PlayerFrameData): String {

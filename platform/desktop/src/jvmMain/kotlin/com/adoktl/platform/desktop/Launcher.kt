@@ -7,6 +7,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.window.FileDialog
 import androidx.compose.ui.window.FileDialogMode
 import androidx.compose.ui.window.Window
@@ -20,17 +25,32 @@ import com.adoktl.util.DebugLog
 import java.io.File
 
 fun main() = application {
+    val playerEngineRef = remember { mutableStateOf<com.adoktl.player.PlayerEngine?>(null) }
+
     Window(
         onCloseRequest = ::exitApplication,
         title = "ADOKTL - A Dance of Fire and Ice",
-        state = rememberWindowState(size = DpSize(960.dp, 700.dp))
+        state = rememberWindowState(size = DpSize(960.dp, 700.dp)),
+        onPreviewKeyEvent = { event ->
+            if (event.key == Key.Spacebar || event.key == Key.Enter) {
+                if (event.type == KeyEventType.KeyUp) {
+                    playerEngineRef.value?.onPress()
+                }
+                true
+            } else false
+        }
     ) {
         ADOKTLApp(
             filePickerButton = { onResult ->
                 DesktopFilePickerButton(onResult = onResult)
             },
             gameViewFactory = { levelJson ->
-                ComposeGameView(playerEngine = rememberPlayerEngine(levelJson))
+                val engine = rememberPlayerEngine(levelJson)
+                LaunchedEffect(engine) { playerEngineRef.value = engine }
+                DisposableEffect(engine) {
+                    onDispose { playerEngineRef.value = null }
+                }
+                ComposeGameView(playerEngine = engine)
             }
         )
     }
