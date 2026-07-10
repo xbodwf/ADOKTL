@@ -84,6 +84,7 @@ class TileEngine(private val levelData: com.adoktl.level.LevelData) {
     }
 
     fun getCurrentTileIndex(elapsedTime: Double): Int {
+        if (tileStartTimes.isEmpty()) return 0
         for (i in tileStartTimes.indices.reversed()) {
             if (elapsedTime >= tileStartTimes[i]) return i
         }
@@ -100,11 +101,13 @@ class TileEngine(private val levelData: com.adoktl.level.LevelData) {
     }
 
     fun calculatePlanetPosition(elapsedTime: Double): Vector2 {
+        if (tileCount == 0) return Vector2.ZERO
+
         val tileIndex = getCurrentTileIndex(elapsedTime)
         val progress = getTileProgress(elapsedTime, tileIndex)
 
         if (tileIndex >= tileCount - 1) {
-            return tilePositions[tileCount - 1]
+            return tilePositions.lastOrNull() ?: Vector2.ZERO
         }
 
         val start = tilePositions[tileIndex]

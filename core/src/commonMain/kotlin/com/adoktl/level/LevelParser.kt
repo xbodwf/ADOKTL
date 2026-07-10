@@ -12,12 +12,20 @@ object LevelParser {
             ?: throw IllegalArgumentException("Invalid ADOFAI level JSON")
 
         val angleData = parseAngleData(root["angleData"])
+        val pathData = parsePathData(root["pathData"])
         val settings = parseSettings(root["settings"] as? Map<String, Any?> ?: emptyMap())
         val actions = parseActions(root["actions"] as? List<*>)
         val decorations = parseDecorations(root["decorations"] as? List<*>)
 
+        val resolvedAngles = if (angleData.isEmpty() && pathData.size >= 2) {
+            deriveAnglesFromPath(pathData)
+        } else {
+            angleData
+        }
+
         return LevelData(
-            angleData = angleData,
+            angleData = resolvedAngles,
+            pathData = pathData,
             settings = settings,
             actions = actions,
             decorations = decorations
@@ -29,6 +37,30 @@ object LevelParser {
             is List<*> -> data.filterIsInstance<Number>().map { it.toDouble() }
             else -> emptyList()
         }
+    }
+
+    private fun parsePathData(data: Any?): List<List<Double>> {
+        return when (data) {
+            is List<*> -> data.map { entry ->
+                (entry as? List<*>)?.filterIsInstance<Number>()?.map { it.toDouble() }
+                    ?: emptyList()
+            }
+            else -> emptyList()
+        }
+    }
+
+    private fun deriveAnglesFromPath(pathData: List<List<Double>>): List<Double> {
+        val angles = mutableListOf<Double>()
+        for (i in 0 until pathData.size - 1) {
+            val curr = pathData[i]
+            val next = pathData[i + 1]
+            if (curr.size < 2 || next.size < 2) continue
+            val dx = next[0] - curr[0]
+            val dy = next[1] - curr[1]
+            val angle = kotlin.math.atan2(dy, dx) * 180.0 / kotlin.math.PI
+            angles.add(angle)
+        }
+        return angles
     }
 
     private fun parseVector2(data: Any?): Vector2 {
