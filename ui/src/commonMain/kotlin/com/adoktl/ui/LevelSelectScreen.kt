@@ -15,7 +15,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-data class FilePickResult(val json: String, val title: String)
+data class FilePickResult(val json: String, val title: String, val baseUri: String? = null)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

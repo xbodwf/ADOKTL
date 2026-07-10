@@ -94,7 +94,6 @@ data class TileData(
 
 data class LevelData(
     val angleData: List<Double>,
-    val pathData: List<List<Double>> = emptyList(),
     val settings: LevelSettings,
     val actions: List<LevelAction> = emptyList(),
     val decorations: List<DecorationAction> = emptyList()

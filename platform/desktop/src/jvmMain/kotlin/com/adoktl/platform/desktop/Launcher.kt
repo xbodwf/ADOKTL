@@ -75,7 +75,7 @@ fun DesktopFilePickerButton(onResult: (FilePickResult) -> Unit) {
             val file = File(dialog.directory, dialog.file)
             try {
                 val json = file.readText()
-                onResult(FilePickResult(json, file.name))
+                onResult(FilePickResult(json, file.name, file.parentFile?.absolutePath))
                 DebugLog.log("Loaded level: ${file.absolutePath}")
             } catch (e: Exception) {
                 DebugLog.log("Failed to load level: ${e.message}")
