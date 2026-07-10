@@ -4,8 +4,8 @@ plugins {
 }
 
 kotlin {
-    jvm()
-    androidTarget()
+    jvm { compilations.all { kotlinOptions.jvmTarget = "17" } }
+    androidTarget { compilations.all { kotlinOptions.jvmTarget = "17" } }
     linuxX64()
     mingwX64()
 

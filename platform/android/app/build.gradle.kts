@@ -10,7 +10,7 @@ plugins {
 }
 
 kotlin {
-    androidTarget()
+    androidTarget { compilations.all { kotlinOptions.jvmTarget = "17" } }
 
     sourceSets {
         val androidMain by getting {
