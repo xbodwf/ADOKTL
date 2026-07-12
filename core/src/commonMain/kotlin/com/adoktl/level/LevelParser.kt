@@ -11,7 +11,7 @@ object LevelParser {
         val root = parser.parse(jsonString) as? Map<String, Any?>
             ?: throw IllegalArgumentException("Invalid ADOFAI level JSON")
 
-        val angleData = parseAngleData(root["angleData"])
+        val angleData = parseAngleData(root["angleData"], root["pathData"] as? String)
         val settings = parseSettings(root["settings"] as? Map<String, Any?> ?: emptyMap())
         val actions = parseActions(root["actions"] as? List<*>)
         val decorations = parseDecorations(root["decorations"] as? List<*>)
@@ -24,12 +24,80 @@ object LevelParser {
         )
     }
 
-    private fun parseAngleData(data: Any?): List<Double> {
-        return when (data) {
-            is List<*> -> data.filterIsInstance<Number>().map { it.toDouble() }
-            else -> emptyList()
+    private fun parseAngleData(angleData: Any?, pathData: String?): List<Double> {
+        if (angleData is List<*>) {
+            val parsed = angleData.filterIsInstance<Number>().map { it.toDouble() }
+            if (parsed.isNotEmpty()) return parsed
         }
+        if (pathData != null && pathData.isNotEmpty()) {
+            return parsePathData(pathData)
+        }
+        return emptyList()
     }
+
+    private fun parsePathData(data: String): List<Double> {
+        val result = mutableListOf<Double>()
+        var staticAngle = 0.0
+        for (ch in data) {
+            val angle = ANGLE_MAP[ch] ?: continue
+            if (ch == MIDSPIN_CHAR) {
+                result.add(999.0)
+                continue
+            }
+            staticAngle = if (angle.relative) {
+                generalizeAngle(staticAngle + 180.0 - angle.angle)
+            } else {
+                angle.angle
+            }
+            result.add(staticAngle)
+        }
+        return result
+    }
+
+    private fun generalizeAngle(a: Double): Double {
+        val m = a % 360.0
+        return if (m < 0) m + 360.0 else m
+    }
+
+    private data class AngleEntry(val angle: Double, val relative: Boolean)
+
+    private const val MIDSPIN_CHAR = '!'
+
+    private val ANGLE_MAP: Map<Char, AngleEntry> = mapOf(
+        'R' to AngleEntry(0.0, false),
+        'p' to AngleEntry(15.0, false),
+        'J' to AngleEntry(30.0, false),
+        'E' to AngleEntry(45.0, false),
+        'T' to AngleEntry(60.0, false),
+        'o' to AngleEntry(75.0, false),
+        'U' to AngleEntry(90.0, false),
+        'q' to AngleEntry(105.0, false),
+        'G' to AngleEntry(120.0, false),
+        'Q' to AngleEntry(135.0, false),
+        'H' to AngleEntry(150.0, false),
+        'W' to AngleEntry(165.0, false),
+        'L' to AngleEntry(180.0, false),
+        'x' to AngleEntry(195.0, false),
+        'N' to AngleEntry(210.0, false),
+        'Z' to AngleEntry(225.0, false),
+        'F' to AngleEntry(240.0, false),
+        'V' to AngleEntry(255.0, false),
+        'D' to AngleEntry(270.0, false),
+        'Y' to AngleEntry(285.0, false),
+        'B' to AngleEntry(300.0, false),
+        'C' to AngleEntry(315.0, false),
+        'M' to AngleEntry(330.0, false),
+        'A' to AngleEntry(345.0, false),
+        't' to AngleEntry(60.0, true),
+        'h' to AngleEntry(120.0, true),
+        'j' to AngleEntry(240.0, true),
+        'y' to AngleEntry(300.0, true),
+        '5' to AngleEntry(108.0, true),
+        '6' to AngleEntry(252.0, true),
+        '7' to AngleEntry(900.0 / 7.0, true),
+        '8' to AngleEntry(360.0 - 900.0 / 7.0, true),
+        '!' to AngleEntry(999.0, true)
+    )
 
     private fun parseVector2(data: Any?): Vector2 {
         val list = data as? List<*> ?: return Vector2.ZERO

@@ -1,2 +1,6 @@
 .adofai
 .gradle
+local.properties
+.idea
+*.iml
+build/

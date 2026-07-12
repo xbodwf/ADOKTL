@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 sealed class Screen {
     data object Welcome : Screen()
     data object LevelSelect : Screen()
-    data class Game(val levelJson: String, val title: String = "") : Screen()
+    data class Game(val levelJson: String, val title: String = "", val baseUri: String? = null) : Screen()
 }
 
 @Composable
@@ -42,7 +42,7 @@ fun ADOKTLApp(
                 is Screen.LevelSelect -> LevelSelectScreen(
                     onFileSelected = { result ->
                         recentFiles = (recentFiles.filter { it != result.title } + result.title).take(10)
-                        currentScreen = Screen.Game(result.json, result.title)
+                        currentScreen = Screen.Game(result.json, result.title, result.baseUri)
                     },
                     onBack = { currentScreen = Screen.Welcome },
                     filePickerButton = filePickerButton

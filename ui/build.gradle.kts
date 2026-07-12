@@ -6,8 +6,8 @@ plugins {
 }
 
 kotlin {
-    jvm()
-    androidTarget()
+    jvm { compilations.all { kotlinOptions.jvmTarget = "17" } }
+    androidTarget { compilations.all { kotlinOptions.jvmTarget = "17" } }
 
     sourceSets {
         val commonMain by getting {

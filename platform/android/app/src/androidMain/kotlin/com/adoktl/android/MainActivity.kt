@@ -1,7 +1,9 @@
 package com.adoktl.android
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.DocumentsContract
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -56,24 +58,29 @@ fun AndroidFilePickerButton(onResult: (FilePickResult) -> Unit) {
     var isPicking by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
+        contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
         isPicking = false
         if (uri != null) {
             try {
-                val json = context.contentResolver.openInputStream(uri)?.use {
-                    it.reader().readText()
-                } ?: return@rememberLauncherForActivityResult
+                context.contentResolver.takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
 
-                val cursor = context.contentResolver.query(uri, null, null, null, null)
-                val displayName = cursor?.use {
-                    if (it.moveToFirst()) {
-                        val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                        if (nameIndex >= 0) it.getString(nameIndex) else uri.lastPathSegment ?: "Unknown"
-                    } else uri.lastPathSegment ?: "Unknown"
-                } ?: uri.lastPathSegment ?: "Unknown"
+                val adofaiFiles = findAllAdofai(context, uri)
+                if (adofaiFiles.isEmpty()) {
+                    DebugLog.log("No .adofai file found in selected folder")
+                    return@rememberLauncherForActivityResult
+                }
 
-                onResult(FilePickResult(json, displayName))
+                val levels = adofaiFiles.mapNotNull { (fileUri, name) ->
+                    val json = context.contentResolver.openInputStream(fileUri)?.use {
+                        it.reader().readText()
+                    } ?: return@mapNotNull null
+                    com.adoktl.ui.LevelEntry(json, name)
+                }
+
+                onResult(FilePickResult("", "", uri.toString(), levels))
             } catch (e: Exception) {
                 DebugLog.log("File picker error: ${e.message}")
             }
@@ -83,11 +90,35 @@ fun AndroidFilePickerButton(onResult: (FilePickResult) -> Unit) {
     Button(
         onClick = {
             isPicking = true
-            launcher.launch(arrayOf("*/*"))
+            launcher.launch(null)
         },
         enabled = !isPicking,
         modifier = Modifier.width(220.dp).height(48.dp)
     ) {
-        Text(if (isPicking) "Opening..." else "Browse Files", fontSize = 16.sp)
+        Text(if (isPicking) "Opening..." else "Browse Folder", fontSize = 16.sp)
     }
+}
+
+private fun findAllAdofai(
+    context: android.content.Context,
+    treeUri: Uri,
+    parentDocId: String? = null
+): List<Pair<Uri, String>> {
+    val result = mutableListOf<Pair<Uri, String>>()
+    val docId = parentDocId ?: DocumentsContract.getTreeDocumentId(treeUri)
+    val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, docId)
+    val cursor = context.contentResolver.query(childrenUri, null, null, null, null)
+    cursor?.use {
+        while (it.moveToNext()) {
+            val childId = it.getString(it.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID))
+            val mime = it.getString(it.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE))
+            val name = it.getString(it.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)) ?: continue
+            if (mime == DocumentsContract.Document.MIME_TYPE_DIR) {
+                result.addAll(findAllAdofai(context, treeUri, childId))
+            } else if (name.endsWith(".adofai")) {
+                result.add(DocumentsContract.buildDocumentUriUsingTree(treeUri, childId) to name)
+            }
+        }
+    }
+    return result
 }

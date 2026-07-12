@@ -15,7 +15,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-data class FilePickResult(val json: String, val title: String)
+data class LevelEntry(val json: String, val title: String)
+
+data class FilePickResult(
+    val json: String,
+    val title: String,
+    val baseUri: String? = null,
+    val levels: List<LevelEntry> = emptyList()
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,7 +36,13 @@ fun LevelSelectScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Select Level", fontWeight = FontWeight.SemiBold) },
+                title = {
+                    Text(
+                        if (pickResult?.levels?.isNotEmpty() == true) "Select Level"
+                        else "Select Level",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -46,71 +59,86 @@ fun LevelSelectScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = Icons.Default.FolderOpen,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Choose an ADOFAI level file",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Select a .adofai file to start playing",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            filePickerButton { result ->
-                pickResult = result
-            }
-
-            if (pickResult != null) {
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Card(
-                    modifier = Modifier.widthIn(max = 400.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    )
+            val levels = pickResult?.levels
+            if (levels.isNullOrEmpty()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = pickResult!!.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                    Icon(
+                        imageVector = Icons.Default.FolderOpen,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(
+                        text = "Choose an ADOFAI level folder",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Pick a folder containing .adofai files",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    filePickerButton { result ->
+                        pickResult = result
+                    }
+                }
+            } else {
+                Text(
+                    text = "${levels.size} level(s) found",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    levels.forEach { entry ->
+                        Card(
+                            onClick = { onFileSelected(FilePickResult(entry.json, entry.title, pickResult?.baseUri)) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                            )
+                        ) {
+                            Text(
+                                text = entry.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Button(
-                    onClick = { pickResult?.let { onFileSelected(it) } },
-                    modifier = Modifier
-                        .width(200.dp)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp)
+                OutlinedButton(
+                    onClick = { pickResult = null },
+                    modifier = Modifier.width(220.dp).height(48.dp)
                 ) {
-                    Text("Load Level", fontSize = 16.sp)
+                    Text("Browse Another Folder", fontSize = 14.sp)
                 }
             }
         }

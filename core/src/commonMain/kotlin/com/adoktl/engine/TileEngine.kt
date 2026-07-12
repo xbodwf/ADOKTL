@@ -100,6 +100,8 @@ class TileEngine(private val levelData: com.adoktl.level.LevelData) {
     }
 
     fun calculatePlanetPosition(elapsedTime: Double): Vector2 {
+        if (tileCount == 0) return Vector2.ZERO
+
         val tileIndex = getCurrentTileIndex(elapsedTime)
         val progress = getTileProgress(elapsedTime, tileIndex)
 

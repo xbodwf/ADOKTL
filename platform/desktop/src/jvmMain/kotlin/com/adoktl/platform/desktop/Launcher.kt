@@ -68,15 +68,21 @@ fun DesktopFilePickerButton(onResult: (FilePickResult) -> Unit) {
     }
 
     if (showDialog) {
-        val dialog = FileDialog(null as Frame?, "Select ADOFAI Level", FileDialog.LOAD)
+        val dialog = FileDialog(null as Frame?, "Select an ADOFAI Level", FileDialog.LOAD)
         dialog.isVisible = true
         showDialog = false
         if (dialog.file != null) {
-            val file = File(dialog.directory, dialog.file)
+            val dir = File(dialog.directory)
+            val selectedFile = File(dir, dialog.file)
             try {
-                val json = file.readText()
-                onResult(FilePickResult(json, file.name))
-                DebugLog.log("Loaded level: ${file.absolutePath}")
+                val dirPath = dir.absolutePath
+                val adofaiFiles = dir.listFiles { f -> f.name.endsWith(".adofai") }
+                    ?: arrayOf(selectedFile)
+                val levels = adofaiFiles.map { f ->
+                    com.adoktl.ui.LevelEntry(f.readText(), f.name)
+                }
+                onResult(FilePickResult("", "", dirPath, levels))
+                DebugLog.log("Found ${levels.size} level(s) in $dirPath")
             } catch (e: Exception) {
                 DebugLog.log("Failed to load level: ${e.message}")
             }
